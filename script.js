@@ -13,6 +13,16 @@ let startTime;
 // array
 let trees = [];
 let objects = [];
+let dinosaur;
+
+// road details
+const road = {
+  x: 0,
+  y: canvas.height - 350,
+  width: canvas.width * 2,
+  height: 200,
+  speed: 1,
+};
 
 // style
 function setStyle(font, fillStyle, strokeStyle, lineWidth) {
@@ -81,9 +91,9 @@ createTree();
 // CREATE OBJECT
 function createObject() {
   const object = {
-    width: 40,
+    width: Math.random() * 10 + 20,
     height: 120,
-    x: canvas.width + Math.random() * 100,
+    x: canvas.width + Math.random() * 120,
     y: 0,
   };
   if (Math.random() > 0.5) {
@@ -94,6 +104,17 @@ function createObject() {
   objects.push(object);
 }
 createObject();
+
+// CREATE DINOSAUR
+function createDinosaur() {
+  dinosaur = {
+    width: 30,
+    height: 60,
+    x: 150,
+    y: road.y + road.height / 2 - 30,
+  };
+}
+createDinosaur();
 
 // DRAW SHAPE
 function drawShape(
@@ -119,15 +140,6 @@ function drawShape(
   ctx.stroke();
   ctx.closePath();
 }
-
-// road details
-const road = {
-  x: 0,
-  y: canvas.height - 350,
-  width: canvas.width * 2,
-  height: 200,
-  speed: 1,
-};
 
 // DRAW ROAD SCENE
 function drawRoadScene() {
@@ -202,6 +214,22 @@ function drawRoadScene() {
       );
     }
   }
+
+  // draw dinosaur
+  //  type, x, y, width, height, font, fillStyle, strokeStyle, lineWidth
+  if (dinosaur) {
+    drawShape(
+      "rect",
+      dinosaur.x,
+      dinosaur.y,
+      dinosaur.width,
+      dinosaur.height,
+      null,
+      "blue",
+      "white",
+      1
+    );
+  }
 }
 drawRoadScene();
 
@@ -209,9 +237,47 @@ drawRoadScene();
 function startGameBtn() {
   startTime = Date.now();
   document.getElementById("start-game-btn").disabled = true;
+  document.addEventListener("keydown", keyDownHandler, false);
+  document.addEventListener("keyup", keyUpHandler, false);
   canvasUpdateInterval = setInterval(updateCanvas, 100 / 60);
   treeCreationInterval = setInterval(createTree, 2000);
   objectCreationInterval = setInterval(createObject, 1500);
+}
+
+let isJumping = false;
+let isFolding = false;
+
+function keyDownHandler(e) {
+  if (e.key === "ArrowUp" || e.key === "Up") {
+    if (!isJumping && !isFolding) {
+      isJumping = true;
+      dinosaur.height = 60;
+      setTimeout(() => {
+        dinosaur.y = road.y + road.height / 2 - 30;
+        isJumping = false;
+      }, 500);
+      dinosaur.y = Math.max(road.y, dinosaur.y - 60);
+    }
+  } else if (e.key === "ArrowDown" || e.key === "Down") {
+    if (!isFolding) {
+      isFolding = true;
+      dinosaur.width = 60;
+      dinosaur.height = 30;
+      dinosaur.y = road.y + road.height / 2 + 50;
+    }
+  }
+}
+
+function keyUpHandler(e) {
+  if (e.key === "ArrowDown" || e.key === "Down") {
+    isFolding = false;
+    dinosaur.height = 60;
+    dinosaur.width = 30;
+    dinosaur.y = road.y + road.height / 2 - 30;
+  } else if (e.key === "ArrowUp" || e.key === "Up") {
+    isJumping = false;
+    dinosaur.y = road.y + road.height / 2 - 30;
+  }
 }
 
 // UPDATE CANVAS
