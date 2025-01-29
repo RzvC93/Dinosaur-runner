@@ -1,28 +1,54 @@
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
 
+// constants
+const oneSecond = 1000;
+const TEN = 10;
+const TWENTY = 20;
+const THIRTY = 30;
+const FORTY = 40;
+const SIXTY = 60;
+const ONE_HUNDRED = 100;
+const ONE_HUNDRED_TWENTY = 120;
+const ONE_HUNDRED_FIFTY = 150;
+const TWO_HUNDRED = 200;
+const TWO_HUNDRED_FIFTY = 250;
+const roadTopMargin = 350;
+const ONE_THOUSAND = 1000;
+const ONE_THOUSAND_FIVE_HUNDRED = 1500;
+
 // variables
 let canvasUpdateInterval;
 let treeCreationInterval;
 let objectCreationInterval;
-
-// time
-const oneSecond = 1000;
 let startTime;
+let bestScore = 0;
 
 // array
-let trees = [];
-let objects = [];
-let dinosaur;
+const trees = [];
+const objects = [];
 
 // road details
 const road = {
   x: 0,
-  y: canvas.height - 350,
+  y: canvas.height - roadTopMargin,
   width: canvas.width * 2,
-  height: 200,
+  height: TWO_HUNDRED,
   speed: 1,
 };
+
+// dinosaur details
+const dinosaur = {
+  width: THIRTY,
+  height: SIXTY,
+  x: ONE_HUNDRED_FIFTY,
+  y: road.y + road.height / 2 - THIRTY,
+};
+
+// game over and status of dinosaur actions
+let gameOver = false;
+let isJumping = false;
+let isFolding = false;
 
 // style
 function setStyle(font, fillStyle, strokeStyle, lineWidth) {
@@ -43,78 +69,72 @@ function setStyle(font, fillStyle, strokeStyle, lineWidth) {
 // TIMER
 function drawTimer() {
   setStyle("30px bold Permanent Marker", "black", null, null);
-
-  // Calculate the elapsed time.
   let elapsedTime;
   if (!startTime) {
     elapsedTime = 0;
   } else {
     elapsedTime = Date.now() - startTime;
   }
-
-  // Calculate the minutes, seconds and milliseconds of the total elapsed time.
-  let milliseconds = Math.floor((elapsedTime % oneSecond) / 100);
-  let seconds = Math.floor(elapsedTime / oneSecond) % 60;
-  let minutes = Math.floor(elapsedTime / oneSecond / 60);
-
-  // Format the timer
+  let milliseconds = Math.floor((elapsedTime % oneSecond) / ONE_HUNDRED);
+  let seconds = Math.floor(elapsedTime / oneSecond) % SIXTY;
+  let minutes = Math.floor(elapsedTime / oneSecond / SIXTY);
   const timerText = `${minutes.toString().padStart(2, "0")}${seconds
     .toString()
     .padStart(2, "0")}${milliseconds.toString()}`;
-
-  // Calculate the width of the text to position it correctly.
   const timerTextWidth = ctx.measureText(timerText).width;
-  const textXPos = Math.max(canvas.width - timerTextWidth - 20, 20);
-
-  // Draw the text on canvas.
-  ctx.fillText(timerText, textXPos, 40);
+  const textXPos = Math.max(canvas.width - timerTextWidth - TWENTY, TWENTY);
+  ctx.fillText(timerText, textXPos, FORTY);
 }
-drawTimer();
 
-// CREATE TREE
-function createTree() {
-  const tree = {
-    width: 10,
-    height: Math.random() * 15 + 55,
-    x: canvas.width + Math.random() * 100,
-    y: 0,
-  };
-  if (Math.random() > 0.5) {
-    tree.y = canvas.height - 350 - tree.height;
-  } else {
-    tree.y = canvas.height - 150;
+// BEST SCORE
+function displayBestScore() {
+  const scoreTextWidth = ctx.measureText(`HI: 000000`).width;
+  const bestScoreXPos = canvas.width - scoreTextWidth - 150;
+
+  ctx.clearRect(bestScoreXPos - TWENTY, 0, scoreTextWidth + FORTY, FORTY);
+
+  setStyle("30px bold Permanent Marker", "black", null, null);
+  let milliseconds = Math.floor((bestScore % oneSecond) / ONE_HUNDRED);
+  let seconds = Math.floor(bestScore / oneSecond) % SIXTY;
+  let minutes = Math.floor(bestScore / oneSecond / SIXTY);
+
+  const scoreText = `HI: ${minutes.toString().padStart(2, "0")}${seconds
+    .toString()
+    .padStart(2, "0")}${milliseconds.toString()}`;
+  ctx.fillText(scoreText, bestScoreXPos, FORTY);
+}
+
+// CREATE ELEMENT
+function createElement(type) {
+  let width, height, x, y;
+  if (type === "tree") {
+    width = 5;
+    height = ONE_HUNDRED;
+  } else if (type === "object") {
+    width = Math.random() * TEN + TWENTY;
+    height = ONE_HUNDRED_TWENTY;
   }
-  trees.push(tree);
-}
-createTree();
 
-// CREATE OBJECT
-function createObject() {
-  const object = {
-    width: Math.random() * 10 + 20,
-    height: 120,
-    x: canvas.width + Math.random() * 120,
-    y: 0,
-  };
-  if (Math.random() > 0.5) {
-    object.y = canvas.height - 350;
+  x = canvas.width + Math.random() * ONE_HUNDRED;
+
+  if (type === "tree") {
+    if (Math.random() > 0.5) {
+      y = canvas.height - roadTopMargin - height;
+    } else {
+      y = canvas.height - ONE_HUNDRED_FIFTY;
+    }
+    trees.push({ width, height, x, y });
   } else {
-    object.y = canvas.height - 150 - object.height;
+    if (Math.random() > 0.5) {
+      y = canvas.height - roadTopMargin;
+    } else {
+      y = canvas.height - ONE_HUNDRED_FIFTY - height;
+    }
+    objects.push({ width, height, x, y });
   }
-  objects.push(object);
 }
-createObject();
-
-// CREATE DINOSAUR
-function createDinosaur() {
-  dinosaur = {
-    width: 30,
-    height: 60,
-    x: 150,
-    y: road.y + road.height / 2 - 30,
-  };
-}
-createDinosaur();
+createElement("tree");
+createElement("object");
 
 // DRAW SHAPE
 function drawShape(
@@ -144,7 +164,6 @@ function drawShape(
 // DRAW ROAD SCENE
 function drawRoadScene() {
   // draw road
-  //  type, x, y, width, height, font, fillStyle, strokeStyle, lineWidth
   drawShape(
     "rect",
     road.x,
@@ -158,7 +177,6 @@ function drawRoadScene() {
   );
 
   // draw line
-  //  type, x, y, width, height, font, fillStyle, strokeStyle, lineWidth
   drawShape(
     "line",
     road.x,
@@ -172,7 +190,6 @@ function drawRoadScene() {
   );
 
   // draw trees
-  //  type, x, y, width, height, font, fillStyle, strokeStyle, lineWidth
   for (let i = 0; i < trees.length; ++i) {
     if (trees[i].x + trees[i].width < 0) {
       trees.splice(i, 1);
@@ -194,7 +211,6 @@ function drawRoadScene() {
   }
 
   // draw objects
-  //  type, x, y, width, height, font, fillStyle, strokeStyle, lineWidth
   for (let i = 0; i < objects.length; ++i) {
     if (objects[i].x + objects[i].width < 0) {
       objects.splice(i, 1);
@@ -216,54 +232,37 @@ function drawRoadScene() {
   }
 
   // draw dinosaur
-  //  type, x, y, width, height, font, fillStyle, strokeStyle, lineWidth
-  if (dinosaur) {
-    drawShape(
-      "rect",
-      dinosaur.x,
-      dinosaur.y,
-      dinosaur.width,
-      dinosaur.height,
-      null,
-      "blue",
-      "white",
-      1
-    );
-  }
+  drawShape(
+    "rect",
+    dinosaur.x,
+    dinosaur.y,
+    dinosaur.width,
+    dinosaur.height,
+    null,
+    "blue",
+    "white",
+    1
+  );
 }
 drawRoadScene();
 
-// START GAME
-function startGameBtn() {
-  startTime = Date.now();
-  document.getElementById("start-game-btn").disabled = true;
-  document.addEventListener("keydown", keyDownHandler, false);
-  document.addEventListener("keyup", keyUpHandler, false);
-  canvasUpdateInterval = setInterval(updateCanvas, 100 / 60);
-  treeCreationInterval = setInterval(createTree, 2000);
-  objectCreationInterval = setInterval(createObject, 1500);
-}
-
-let isJumping = false;
-let isFolding = false;
-
 function keyDownHandler(e) {
   if (e.key === "ArrowUp" || e.key === "Up") {
-    if (!isJumping && !isFolding) {
+    if (!isJumping) {
       isJumping = true;
-      dinosaur.height = 60;
+      dinosaur.height = SIXTY;
+      dinosaur.y = Math.max(road.y, dinosaur.y - SIXTY);
       setTimeout(() => {
-        dinosaur.y = road.y + road.height / 2 - 30;
+        dinosaur.y = road.y + road.height / 2 - THIRTY;
         isJumping = false;
-      }, 500);
-      dinosaur.y = Math.max(road.y, dinosaur.y - 60);
+      }, ONE_THOUSAND);
     }
   } else if (e.key === "ArrowDown" || e.key === "Down") {
     if (!isFolding) {
       isFolding = true;
-      dinosaur.width = 60;
-      dinosaur.height = 30;
-      dinosaur.y = road.y + road.height / 2 + 50;
+      dinosaur.width = SIXTY;
+      dinosaur.height = THIRTY;
+      dinosaur.y = road.y + road.height / 2 + SIXTY;
     }
   }
 }
@@ -271,17 +270,54 @@ function keyDownHandler(e) {
 function keyUpHandler(e) {
   if (e.key === "ArrowDown" || e.key === "Down") {
     isFolding = false;
-    dinosaur.height = 60;
-    dinosaur.width = 30;
-    dinosaur.y = road.y + road.height / 2 - 30;
+    dinosaur.height = SIXTY;
+    dinosaur.width = THIRTY;
   } else if (e.key === "ArrowUp" || e.key === "Up") {
     isJumping = false;
-    dinosaur.y = road.y + road.height / 2 - 30;
   }
+  dinosaur.y = road.y + road.height / 2 - THIRTY;
 }
 
 // UPDATE CANVAS
 function updateCanvas() {
+  if (gameOver) {
+    const elapsedTime = Date.now() - startTime;
+
+    if (elapsedTime > bestScore) {
+      bestScore = elapsedTime;
+    }
+
+    clearInterval(canvasUpdateInterval);
+    clearInterval(treeCreationInterval);
+    clearInterval(objectCreationInterval);
+
+    setStyle("30px bold Permanent Marker", "black", null, null);
+    const textWidth = ctx.measureText("GAME OVER").width;
+    ctx.fillText(
+      "GAME OVER",
+      (canvas.width - textWidth) / 2,
+      canvas.height / 2
+    );
+
+    displayBestScore();
+
+    const startButton = document.getElementById("start-game-btn");
+    startButton.disabled = false;
+    startButton.textContent = "Restart Game";
+
+    function restartOnKeyPress(e) {
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        restartGame();
+        startButton.disabled = true;
+        startButton.textContent = "Start Game";
+        document.removeEventListener("keydown", restartOnKeyPress);
+      }
+    }
+    document.addEventListener("keydown", restartOnKeyPress);
+    return;
+  }
+
+  // if game is not over
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawTimer();
   road.x -= road.speed;
@@ -289,4 +325,50 @@ function updateCanvas() {
     road.x = 0;
   }
   drawRoadScene();
+
+  for (let i = 0; i < objects.length; ++i) {
+    if (checkCollision(dinosaur, objects[i])) {
+      gameOver = true;
+    }
+  }
+
+  displayBestScore();
+}
+
+// CHECK COLLISION
+function checkCollision(dinosaur, object) {
+  return (
+    dinosaur.x < object.x + object.width &&
+    dinosaur.x + dinosaur.width > object.x &&
+    dinosaur.y < object.y + object.height &&
+    dinosaur.y + dinosaur.height > object.y
+  );
+}
+
+// START GAME
+function startGameBtn() {
+  startTime = Date.now();
+  document.getElementById("start-game-btn").disabled = true;
+  document.addEventListener("keydown", keyDownHandler, false);
+  document.addEventListener("keyup", keyUpHandler, false);
+  canvasUpdateInterval = setInterval(updateCanvas, ONE_HUNDRED / SIXTY);
+  treeCreationInterval = setInterval(() => createElement("tree"), ONE_THOUSAND);
+  objectCreationInterval = setInterval(
+    () => createElement("object"),
+    ONE_THOUSAND_FIVE_HUNDRED
+  );
+}
+
+// RESTART GAME
+function restartGame() {
+  gameOver = false;
+  startTime = Date.now();
+  trees.length = 0;
+  objects.length = 0;
+  road.x = 0;
+  dinosaur.y = road.y + road.height / 2 - THIRTY;
+  isJumping = false;
+  isFolding = false;
+
+  startGameBtn();
 }
