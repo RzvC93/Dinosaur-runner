@@ -85,6 +85,7 @@ function drawTimer() {
   const textXPos = Math.max(canvas.width - timerTextWidth - TWENTY, TWENTY);
   ctx.fillText(timerText, textXPos, FORTY);
 }
+drawTimer();
 
 // BEST SCORE
 function displayBestScore() {
@@ -103,16 +104,13 @@ function displayBestScore() {
     .padStart(2, "0")}${milliseconds.toString()}`;
   ctx.fillText(scoreText, bestScoreXPos, FORTY);
 }
+displayBestScore();
 
 // CREATE ELEMENT
-function createElement(type, width, height, y) {
+function createElement(list, width, height, yValues) {
   let x = canvas.width + Math.random() * ONE_HUNDRED;
-
-  if (type === "tree") {
-    trees.push({ width, height, x, y });
-  } else {
-    objects.push({ width, height, x, y });
-  }
+  let y = yValues[Math.floor(Math.random() * yValues.length)];
+  list.push({ width, height, x, y });
 }
 
 // DRAW SHAPE
@@ -336,28 +334,17 @@ function startGameBtn() {
   document.addEventListener("keyup", keyUpHandler, false);
   canvasUpdateInterval = setInterval(updateCanvas, ONE_HUNDRED / SIXTY);
   treeCreationInterval = setInterval(() => {
-    let y;
-    if (Math.random() > 0.5) {
-      y = canvas.height - roadTopMargin - ONE_HUNDRED;
-    } else {
-      y = canvas.height - ONE_HUNDRED_FIFTY;
-    }
-    createElement("tree", 5, ONE_HUNDRED, y);
+    createElement(trees, 5, ONE_HUNDRED, [
+      canvas.height - roadTopMargin - ONE_HUNDRED,
+      canvas.height - ONE_HUNDRED_FIFTY,
+    ]);
   }, ONE_THOUSAND);
 
   objectCreationInterval = setInterval(() => {
-    let y;
-    if (Math.random() > 0.5) {
-      y = canvas.height - roadTopMargin;
-    } else {
-      y = canvas.height - ONE_HUNDRED_FIFTY - ONE_HUNDRED_TWENTY;
-    }
-    createElement(
-      "object",
-      Math.random() * TEN + TWENTY,
-      ONE_HUNDRED_TWENTY,
-      y
-    );
+    createElement(objects, Math.random() * TEN + TWENTY, ONE_HUNDRED_TWENTY, [
+      canvas.height - roadTopMargin,
+      canvas.height - ONE_HUNDRED_FIFTY - ONE_HUNDRED_TWENTY,
+    ]);
   }, ONE_THOUSAND_FIVE_HUNDRED);
 }
 
